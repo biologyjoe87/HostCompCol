@@ -7,6 +7,7 @@ library(see)
 library(cowplot)
 library(doFuture)
 
+# function containing dynamic equations for the host, competitor, and colonizor populations
 CoralMutPathDynamics <- function(time, state, pars) {
   dstatedt <- with(pars, {
     
@@ -32,7 +33,7 @@ IntegrateDynamics <- function(inistate, pars, endtime, timestep, fn){
   return(timeseries)
 }
 
-# Just returns the value of the ODE at some final time points
+# Returns the value of the ODE at some final time points
 EndDynamics <- function(inistate, pars, endtime, timestep, timelength, fn){
   times <- c(0, seq(endtime - timestep*timelength, endtime, length.out = timelength+1))
   timeseries <- as.data.frame(ode(inistate, times, fn, pars,
@@ -40,6 +41,7 @@ EndDynamics <- function(inistate, pars, endtime, timestep, timelength, fn){
   return(timeseries)
 }
 
+# rate of change of host population for some h, assuming competitor and colonizer reach equilibrium
 PredEq <- function(h, pars) {
   ret <- with(pars, {
     X <- (dp + dh + dhp) / cp
@@ -53,6 +55,7 @@ PredEq <- function(h, pars) {
   return(ret)
 }
 
+# get equilibrium values for competitor and colonizer at some host population density
 GetPM <- function(h, pars) {
   ret <- with(pars, {
     X <- (dp + dh + dhp) / cp
@@ -67,6 +70,7 @@ GetPM <- function(h, pars) {
   return(ret)
 }
 
+# create Jacobian matrix for the given ODEs
 BuildJacobian <- function(h, p, m, pars) {
   J <- with(pars, {
     J <- matrix(0, 3, 3)
@@ -87,6 +91,7 @@ BuildJacobian <- function(h, p, m, pars) {
   return(J)
 }
 
+# Find the leading eigenvalue of a matrix
 GetEig <- function(J) {
   eigs <- eigen(J, only.values = TRUE)$values
   re_eigs <- Re(eigs)
@@ -94,6 +99,7 @@ GetEig <- function(J) {
   return(max_eig)
 }
 
+# return instantaneous rate of change of h at some p and m value
 HM_LimitCycle <- function(h, p, m, pars) {
   ret <- with(pars, {
     LHS = -ch * h^2 + (ch - dh) * h + (chm - ch) * (1 - h) * m
